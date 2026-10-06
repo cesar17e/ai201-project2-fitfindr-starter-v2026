@@ -1,6 +1,6 @@
 # FitFindr
 
-> ### 👋 Start here
+<!-- > ### 👋 Start here
 >
 > **New to this repo? Read [RUNNING.md](RUNNING.md) first** — setup, every
 > command, and what to do when something breaks.
@@ -16,7 +16,7 @@
 > All three tools are stubs, so that last command will do nothing useful yet.
 > That's the starting position.
 >
-> **The rest of this file is your submission.** Fill it in as you go.
+> **The rest of this file is your submission.** Fill it in as you go. -->
 
 ---
 
@@ -57,26 +57,27 @@
      on, and if you don't decide it here you'll discover it as a crash in
      Milestone 5. -->
 
+
 ### `search_listings`
 
-- **What it does:**
-- **Inputs:** <!-- name and type each: `max_price` (float), not "a price" -->
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Searches the available listings for items matching the user's description and optional size and maximum price.
+- **Inputs:** `description` (str), `size` (str or None), `max_price` (float or None)
+- **Returns:** A list of matching listing dictionaries, ordered with the best matches first. Each dictionary contains the listing's id, title, description, category, style tags, size, condition, price, colors, brand, and platform.
+- **When it has nothing:** Returns an empty list `[]` when no listings match. Size matching is case-insensitive and should allow combined sizes such as `S/M` to match `M` without treating arbitrary substrings such as `L` in `XL` as a match.
 
 ### `suggest_outfit`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Uses the selected thrift listing and the user's wardrobe to generate one or two outfit suggestions.
+- **Inputs:** `new_item` (dict), `wardrobe` (dict)
+- **Returns:** A non-empty string containing outfit suggestions based on the selected item and the user's saved wardrobe pieces.
+- **When it has nothing:** If the wardrobe contains no items, returns general styling advice for the selected item instead of failing.
 
 ### `create_fit_card`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Creates a short post-style caption using the outfit suggestion and selected thrift item.
+- **Inputs:** `outfit` (str), `new_item` (dict)
+- **Returns:** A two-to-four sentence caption that mentions the item, its price and platform, and describes the outfit's vibe.
+- **When it has nothing:** If `outfit` is empty or only whitespace, returns a descriptive message explaining that a fit card could not be created instead of raising an error.
 
 ---
 
@@ -94,6 +95,7 @@
      function have to be real. -->
 
 **Branch rule:**
+First, the agent parses the user's query and calls `search_listings` with the description, size, and maximum price. If `search_listings` returns an empty list, the agent saves a helpful message in the session telling the user to change their description, size, or maximum price, and then stops. Otherwise, the agent takes the first search result, saves it as the selected item, passes it to `suggest_outfit` along with the wardrobe.
 
 **Where it lives:** `agent.py::run_agent`
 
