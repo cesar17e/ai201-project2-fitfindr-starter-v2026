@@ -39,6 +39,8 @@
 
 ## What This Does
 
+FitFindr helps a user search for thrifted clothing based on a description, optional size, and maximum price. It searches available listings, selects a matching item, and suggests one or two outfits using pieces from the user's wardrobe. It then creates a short fit-card caption describing the selected item and the overall outfit vibe. If no listings match the search, the agent stops early and tells the user to try changing the description, size, or maximum price.
+
 <!-- Three or four sentences: what a user asks for, and what they get back. -->
 
 
@@ -188,15 +190,19 @@ Nothing beats the timeless vibe of these Vintage Levi's 501 Jeans in a medium wa
 
 **Moment 1**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- What I asked for: Help designing search_listings with description, size, and price filtering.
+
+- What came back: A keyword-matching approach with separate size and price filters.
+
+- What I changed: I added safer size matching so M can match S/M without incorrectly matching sizes like XL.
 
 **Moment 2**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- What I asked for: Help improving the create_fit_card prompt.
+
+- What came back: Some captions sounded like the user had bought the item or was trying to sell it.
+
+- What I changed: I added rules to avoid fake personal experiences and seller-style language.
 
 <!-- ═══════════════════════ UNIT 4 — THE TEST ═══════════════════════
 
