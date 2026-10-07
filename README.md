@@ -128,14 +128,29 @@ $ python -c "from tools import search_listings; print(search_listings('graphic t
 
 ```
 
+```text
+$ python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe()))"
+
+Here are two outfit ideas using your new vintage Levi's 501 jeans and pieces from your wardrobe:
+
+**Outfit 1: Casual Streetwear**
+*   **Top:** White ribbed tank top
+*   **Outerwear:** Vintage black denim jacket
+*   **Shoes:** Chunky white sneakers
+*   **Accessories:** Black crossbody bag
+*   *Why it works:* A classic denim-on-denim look balanced by a fitted tank and chunky sneakers for an effortless streetwear vibe.
+
+**Outfit 2: Cozy & Classic**
+*   **Top:** Oversized grey crewneck sweatshirt
+*   **Accessories:** Brown leather belt, Black crossbody bag
+*   **Shoes:** Black combat boots
+*   *Why it works:* Tucking the Levi's into the combat boots with a belt adds structure to the oversized grey crewneck, creating an easy, grunge-leaning casual outfit.
 ```
-$ python -c "from tools import suggest_outfit; ..."
 
 ```
+$ python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('jeans and white sneakers', load_listings()[0]))"
 
-```
-$ python -c "from tools import create_fit_card; ..."
-
+Nothing beats the timeless vibe of these Vintage Levi's 501 Jeans in a medium wash, listed on depop for $38.0. Paired with crisp white sneakers, the look leans into effortless streetwear and classic casual style. It is the ultimate laid-back uniform that works for literally any day of the week.
 ```
 
 ---

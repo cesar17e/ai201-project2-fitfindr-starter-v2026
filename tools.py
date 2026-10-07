@@ -63,7 +63,7 @@ def _size_matches(requested: str, actual: str) -> bool:
     return False
 
 
-
+#Implemented the search_listings function to filter thrift listings based on description, size, and max price. It loads listings, applies filters, scores them based on keyword overlap, and returns the best matches.
 def search_listings(
     description: str,
     size: str | None = None,
@@ -166,6 +166,7 @@ def search_listings(
 
 # ── Tool 2: suggest_outfit ────────────────────────────────────────────────────
 
+#Implemented the suggest_outfit function to provide outfit suggestions based on a new thrifted item and the user's existing wardrobe. The function checks if the wardrobe is empty and generates general styling advice if it is. If the wardrobe has items, it formats them into a prompt for the model to suggest specific outfit combinations. 
 def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
     """
     Given a thrifted item and the user's wardrobe, suggest one or two outfits.
@@ -194,8 +195,65 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
     Test it from a terminal before you move on:
         python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe()))"
     """
-    # TODO: replace this with your implementation
-    return ""
+    items = wardrobe.get("items", [])
+
+    # Basic information about the new thrift item
+    item_info = (
+        f"Title: {new_item.get('title', 'Unknown item')}\n"
+        f"Category: {new_item.get('category', 'unknown')}\n"
+        f"Colors: {', '.join(new_item.get('colors', []))}\n"
+        f"Style tags: {', '.join(new_item.get('style_tags', []))}\n"
+    )
+
+    # Empty wardrobe case
+    if not items:
+        prompt = f"""
+    You are a fashion styling assistant.
+
+    The user is considering this thrifted item:
+
+    {item_info}
+
+    The user does not have any saved wardrobe items yet.
+
+    Suggest one or two simple ways they could style this item using
+    general clothing pieces. Keep the response concise and practical.
+    """
+        return generate(prompt).strip()
+
+    # Format the user's wardrobe
+    wardrobe_lines = []
+
+    for item in items:
+        wardrobe_lines.append(
+            f"- {item.get('name', 'Unnamed item')} "
+            f"({item.get('category', 'unknown')}; "
+            f"colors: {', '.join(item.get('colors', []))}; "
+            f"styles: {', '.join(item.get('style_tags', []))})"
+        )
+
+    wardrobe_text = "\n".join(wardrobe_lines)
+
+    prompt = f"""
+    You are a fashion styling assistant.
+
+    The user is considering this thrifted item:
+
+    {item_info}
+
+    The user already owns these wardrobe pieces:
+
+    {wardrobe_text}
+
+    Suggest one or two outfits that use the new thrifted item together
+    with pieces from the user's wardrobe. Name the wardrobe pieces you
+    are using so the suggestion is specific.
+
+    Keep the response concise and practical.
+    """
+
+    return generate(prompt).strip()
+ 
 
 
 # ── Tool 3: create_fit_card ───────────────────────────────────────────────────
@@ -234,5 +292,43 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
     Test it from a terminal before you move on:
         python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('jeans and white sneakers', load_listings()[0]))"
     """
-    # TODO: replace this with your implementation
-    return ""
+
+    # Check if we received a valid outfit suggestion
+    if not outfit or not outfit.strip():
+        return "A fit card could not be created because no outfit suggestion was provided."
+
+    # Get the information we need from the selected item
+    title = new_item.get("title", "Unknown item")
+    price = new_item.get("price", "Unknown")
+    platform = new_item.get("platform", "Unknown")
+    style_tags = ", ".join(new_item.get("style_tags", []))
+
+    # Build the prompt for Gemini
+    prompt = f"""
+    You are writing a short social media caption for a thrifted outfit.
+
+    Here is the thrifted item:
+    - Title: {title}
+    - Price: ${price}
+    - Platform: {platform}
+    - Style: {style_tags}
+
+    Here is the outfit suggestion:
+    {outfit}
+
+    Write a natural, engaging caption following these rules:
+
+    1. Use 2 to 4 sentences.
+    2. Mention the thrifted item by name.
+    3. Mention its price (${price}) exactly once.
+    4. Mention the platform ({platform}) exactly once.
+    5. Describe the overall outfit's style or vibe.
+    6. Make it sound like a real social media post, not a product description.
+    7. Present the item and outfit as a social-style caption, but do not write from the perspective of a seller, do not use sales language such as "available now," "grab it," or "shop now."
+    8. Do not claim the user bought, found, wore, or personally experienced the item. Describe the outfit and listing using only the provided information.
+    9. Avoid first-person claims or opinions such as "I love", "I wore", "I bought", or "I found". Keep the caption natural but factual.
+
+    Return only the finished caption.
+    """
+
+    return generate(prompt).strip()
