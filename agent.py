@@ -13,6 +13,7 @@ Build and test your three tools in `tools.py` first. Then come here.
     python agent.py          runs both example paths below
 """
 
+import re
 import config
 import trace
 from tools import search_listings, suggest_outfit, create_fit_card
@@ -47,8 +48,63 @@ def new_session(query: str, wardrobe: dict) -> dict:
     }
 
 
+#Helper function for run agent
+def _parse_query(query: str) -> dict:
+    text = query.strip()
+
+    # Pull out a maximum price such as "under $30"
+    max_price = None
+
+    price_match = re.search(
+        r"\b(?:under|below|up to|max(?:imum)?)\s*\$?\s*(\d+(?:\.\d+)?)",
+        text,
+        re.IGNORECASE,
+    )
+
+    if price_match:
+        max_price = float(price_match.group(1))
+        text = text[:price_match.start()] + " " + text[price_match.end():]
+
+    # Pull out a size such as "size M"
+    size = None
+
+    size_match = re.search(
+        r"\bsize\s+([a-zA-Z0-9/.\-]+)",
+        text,
+        re.IGNORECASE,
+    )
+
+    if size_match:
+        size = size_match.group(1)
+        text = text[:size_match.start()] + " " + text[size_match.end():]
+
+    # Remove common filler words
+    text = re.sub(
+        r"^\s*(?:looking for|searching for|find me|show me|i want)\s+",
+        "",
+        text,
+        flags=re.IGNORECASE,
+    )
+
+    text = re.sub(
+        r"^\s*(?:a|an|some)\s+",
+        "",
+        text,
+        flags=re.IGNORECASE,
+    )
+
+    description = re.sub(r"\s+", " ", text).strip(" ,.-")
+
+    return {
+        "description": description,
+        "size": size,
+        "max_price": max_price,
+    }
+
+
 # ── planning loop ─────────────────────────────────────────────────────────────
 
+#Implemented run_agent
 def run_agent(query: str, wardrobe: dict) -> dict:
     """
     Run the loop once and return the finished session.
@@ -108,7 +164,59 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     session = new_session(query, wardrobe)
 
     # TODO: delete these two lines and build the loop.
-    session["error"] = "The planning loop isn't built yet — see the TODO in agent.py."
+    step = "parse"
+    count = 0
+
+    while step != "done":
+        count += 1
+        trace.check_iterations(count)
+
+        # Step 1: Parse the user's query
+        if step == "parse":
+            session["parsed"] = _parse_query(session["query"])
+            step = "search"
+
+        # Step 2: Search the listings
+        elif step == "search":
+            parsed = session["parsed"]
+
+            session["search_results"] = search_listings(
+                description=parsed["description"],
+                size=parsed["size"],
+                max_price=parsed["max_price"],
+            )
+
+            # This is the important branch
+            if not session["search_results"]:
+                session["error"] = (
+                    "I couldn't find any matching listings. "
+                    "Try changing the description, size, or maximum price."
+                )
+                return session
+
+            step = "select"
+
+        # Step 3: Choose the first result
+        elif step == "select":
+            session["selected_item"] = session["search_results"][0]
+            step = "outfit"
+
+        # Step 4: Generate an outfit
+        elif step == "outfit":
+            session["outfit_suggestion"] = suggest_outfit(
+                session["selected_item"],
+                session["wardrobe"],
+            )
+            step = "fit_card"
+
+        # Step 5: Generate the fit card
+        elif step == "fit_card":
+            session["fit_card"] = create_fit_card(
+                session["outfit_suggestion"],
+                session["selected_item"],
+            )
+            step = "done"
+
     return session
 
 

@@ -100,8 +100,11 @@ First, the agent parses the user's query and calls `search_listings` with the de
 **Where it lives:** `agent.py::run_agent`
 
 **How the query is parsed:** <!-- regex, string splitting, or asking the model — say which -->
+The query is parsed using regular expressions and string cleanup. The parser extracts a maximum price from phrases such as "under $30", extracts a size from phrases such as "size M", removes those constraints and common filler words, and uses the remaining text as the search description.
+
 
 **What moves through the session:** <!-- which fields, in what order -->
+The original query is stored in session["query"]. The parsed description, size, and maximum price are stored in session["parsed"], followed by the search results in session["search_results"]. If results exist, the first result is stored in session["selected_item"], the outfit suggestion is stored in session["outfit_suggestion"], and the final caption is stored in session["fit_card"]. If no results are found, session["error"] is set and the agent stops before the later tools run.
 
 ---
 
@@ -115,8 +118,27 @@ First, the agent parses the user's query and calls `search_listings` with the de
 **One full query**
 
 ```
-$ python app.py ask '...'
+$ python app.py ask 'looking for a vintage graphic tee under $30'
 
+Found: Y2K Baby Tee — Butterfly Print — $18.0 on depop
+
+Outfit: Here are two outfit ideas using your new Y2K butterfly baby tee and pieces from your wardrobe:
+
+**Outfit 1: Casual Y2K Streetwear**
+* **Bottoms:** Baggy straight-leg jeans (dark wash)
+* **Shoes:** Chunky white sneakers
+* **Accessories:** Black crossbody bag
+* **Why it works:** The tight, cropped fit of the baby tee balances out the voluminous silhouette of the baggy dark-wash jeans for an authentic 2000s streetwear look.
+
+**Outfit 2: Grungy Contrast**
+* **Outerwear:** Vintage black denim jacket
+* **Bottoms:** Wide-leg khaki trousers
+* **Shoes:** Black combat boots
+* **Why it works:** Pairing the sweet, feminine butterfly graphic with heavy black combat boots and a dark denim jacket creates a cool high-low contrast that leans into the vintage-grunge aesthetic.
+
+Fit card: The Y2K Baby Tee — Butterfly Print listed on depop for $18.0 channels a nostalgic 2000s streetwear vibe. It pairs effortlessly with baggy dark-wash jeans and chunky sneakers for a balanced silhouette. Alternatively, styling it with wide-leg trousers, a black denim jacket, and combat boots creates a cool, grungy high-low contrast.
+
+0 model calls this session, 2 served from cache
 ```
 
 **The three tools, tested one at a time**
