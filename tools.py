@@ -23,9 +23,46 @@ the description has to say what is *in* the list.
 import config  # noqa: F401 — you'll use this in search_listings
 from generate import generate
 from utils.data_loader import load_listings
-
+import re
 
 # ── Tool 1: search_listings ───────────────────────────────────────────────────
+
+#Helper function to check if the requested size matches the actual size in the listing
+def _size_matches(requested: str, actual: str) -> bool:
+    requested = requested.strip().lower()
+    actual = actual.strip().lower()
+
+    #Exact match
+    if requested == actual:
+        return True
+
+    #Letter sizes: S, M, L, XL, etc.
+    letter_sizes = {"xxs", "xs", "s", "m", "l", "xl", "xxl", "xxxl"}
+
+    if requested in letter_sizes:
+        actual_sizes = re.findall(
+            r"(?<![a-z0-9])(xxxl|xxl|xxs|xl|xs|s|m|l)(?![a-z0-9])",
+            actual,
+        )
+        return requested in actual_sizes
+
+    #Waist/inseam style sizes such as W30 or L30
+    if re.fullmatch(r"[wl]\d+", requested):
+        return re.search(
+            rf"(?<![a-z0-9]){re.escape(requested)}(?![a-z0-9])",
+            actual,
+        ) is not None
+
+    #Numeric sizes such as shoe size 8
+    if re.fullmatch(r"\d+(?:\.\d+)?", requested):
+        return re.search(
+            rf"(?<!\d){re.escape(requested)}(?!\d)",
+            actual,
+        ) is not None
+
+    return False
+
+
 
 def search_listings(
     description: str,
@@ -78,8 +115,53 @@ def search_listings(
     Test it from a terminal before you move on:
         python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
     """
-    # TODO: replace this with your implementation
-    return []
+        
+    listings = load_listings()
+
+    keywords = set(re.findall(r"[a-z0-9]+", description.lower()))
+
+    scored_results = []
+
+    for listing in listings:
+
+        # Price filter
+        if max_price is not None and listing["price"] > max_price:
+            continue
+
+        # Size filter
+        if size is not None and not _size_matches(size, listing["size"]):
+            continue
+
+        # Combine useful searchable fields
+        searchable_text = " ".join([
+            listing.get("title", ""),
+            listing.get("description", ""),
+            listing.get("category", ""),
+            " ".join(listing.get("style_tags", [])),
+            " ".join(listing.get("colors", [])),
+            listing.get("brand") or "",
+            listing.get("condition", ""),
+            listing.get("platform", ""),
+        ]).lower()
+
+        searchable_words = set(re.findall(r"[a-z0-9]+", searchable_text))
+
+        # Count how many description keywords appear in the listing
+        score = sum(1 for word in keywords if word in searchable_words)
+
+        if score > 0:
+            scored_results.append((score, listing))
+
+    # Highest score first
+    scored_results.sort(key=lambda pair: pair[0], reverse=True)
+
+    # Return only the listing dictionaries, not their scores
+    return [
+        listing
+        for score, listing in scored_results[:config.SEARCH_RESULT_LIMIT]
+    ]
+
+    
 
 
 # ── Tool 2: suggest_outfit ────────────────────────────────────────────────────
