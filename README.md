@@ -190,19 +190,19 @@ Nothing beats the timeless vibe of these Vintage Levi's 501 Jeans in a medium wa
 
 **Moment 1**
 
-- What I asked for: Help designing search_listings with description, size, and price filtering.
+- What I asked for: Targeted help refining `search_listings` and checking its description, size, and price filters.
 
-- What came back: A keyword-matching approach with separate size and price filters.
+- What came back: Suggestions for keyword scoring and separate filters, including the size-matching edge case where a substring check could match `L` inside `XL`.
 
-- What I changed: I added safer size matching so M can match S/M without incorrectly matching sizes like XL.
+- What I changed: I reviewed and adjusted the suggestions before using them, keeping combined-size matches such as `M` in `S/M` while rejecting unrelated size substrings.
 
 **Moment 2**
 
-- What I asked for: Help improving the create_fit_card prompt.
+- What I asked for: Help improving the `create_fit_card` prompt after captions implied purchases or sounded like sales posts.
 
-- What came back: Some captions sounded like the user had bought the item or was trying to sell it.
+- What came back: Suggestions to keep captions factual, explicitly avoid wording such as "Scored this," and give a listing-based alternative.
 
-- What I changed: I added rules to avoid fake personal experiences and seller-style language.
+- What I changed: I reviewed the wording and used a focused prompt change to avoid unsupported personal experiences and seller-style language, while retaining the price, platform, and length requirements.
 
 <!-- ═══════════════════════ UNIT 4 — THE TEST ═══════════════════════
 
@@ -565,7 +565,9 @@ The change helped with the diagnosed wording problem in this sample: the before 
      you did. "I ran out of time" is fine if it's true. Pretending nothing is
      left is not. -->
 
+None of the five original criteria are still missed: all five were MET (5/5) in the after evaluation. Each criterion uses one scenario repeated five times, so the results provide limited coverage of other queries and items. Model output can still vary, and the ownership-language improvement from 1/5 to 0/5 was measured on only five captions; it does not guarantee that unsupported claims cannot recur.
 
+I stopped after the required one improvement and full rerun. Next, I would test a wider range of queries and items and collect more uncached captions to check whether the improvement holds beyond this small sample.
 
 <!-- ═════════════════════════════════════════════════════════════════════
 
