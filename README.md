@@ -360,15 +360,27 @@ Produced by `agent.py::run_agent`; search results returned by `mcp_server.py::se
 
 | # | Criterion | Target | Verdict | How I decided |
 |---|---|---|---|---|
-| 1 |  |  |  |  |
-| 2 |  |  |  |  |
-| 3 |  |  |  |  |
-| 4 |  |  |  |  |
-| 5 |  |  |  |  |
+| 1 | Matching query completes all three tools and returns a fit card | 4 of 5 | MET (5/5) | All five traces show MCP search, suggest_outfit, and create_fit_card completing, with a non-empty caption and no early stop. Five passes meet the original four-pass target. |
+| 2 | Impossible query stops before suggest_outfit with a helpful message | 5 of 5 | MET (5/5) | Every try returned an empty search and stopped after the search step. No outfit or fit-card tool ran, and every message named description, size, or maximum price as things to change. |
+| 3 | Selected-item ID matches the item passed to suggest_outfit | 5 of 5 | MET (5/5) | In all five tries, the trace records lst_002 in session["selected_item"] and lst_002 as the actual suggest_outfit input. |
+| 4 | Fit card includes price and platform and has 2–4 sentences | 4 of 5 | MET (5/5) | All five captions mention the selected item's $15.0 price and depop platform. Their sentence counts are 3, 2, 3, 2, and 3, so all five meet every part of the original criterion. |
+| 5 | Every search result respects the maximum price | 5 of 5 | MET (5/5) | Each try parsed a $20.0 maximum and returned prices of $15.0, $14.0, and $20.0. Every returned item was at or below the inclusive ceiling. |
 
 **Diagnoses**
 
+All five criteria were met in `results/run_2026-10-12_0102_before.md`, using the unchanged Unit 3 targets, so there are no failed-criterion diagnoses.
 
+The 5-of-5 targets cover behavior I expected to be deterministic, while the 4-of-5 targets allow some variability from keyword matching or model-generated output. Repeating one known query per criterion limits coverage, and criterion 4's price, platform, and sentence-count checks leave some caption-quality issues untested.
+
+One real weakness appears in criterion 4, Try 2. The caption from `tools.py::create_fit_card` begins:
+
+```text
+Scored this Mesh Long-Sleeve Top — Black for just $15.0 on depop, and it is the ultimate piece for building textured looks.
+```
+
+The model implied a purchase despite the prompt forbidding that claim, and the tool returned it without validation. The loop and session passed the correct item. This try still passes criterion 4: it includes the price and platform and has two sentences, while unsupported ownership claims are outside that criterion.
+
+I would strengthen criterion 4 in future to also reject unsupported purchase or personal-experience claims. For Milestone 5, I would tighten the fit-card prompt with wording to avoid, such as "Scored this," and measure whether those claims decrease. The original criterion and prompt remain unchanged.
 
 ---
 
