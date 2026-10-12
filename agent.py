@@ -16,7 +16,8 @@ Build and test your three tools in `tools.py` first. Then come here.
 import re
 import config
 import trace
-from tools import search_listings, suggest_outfit, create_fit_card
+from tools import suggest_outfit, create_fit_card
+from mcp_client import call_tool
 from generate import ModelUnavailable
 
 
@@ -120,7 +121,6 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         the run ended early and the later fields will still be None.
 
     ─────────────────────────────────────────────────────────────────────────
-    TODO — build this, following the branch rule you wrote in Milestone 2.
 
       1. Start a session with new_session().
 
@@ -163,7 +163,6 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     """
     session = new_session(query, wardrobe)
 
-    # TODO: delete these two lines and build the loop.
     step = "parse"
     count = 0
 
@@ -180,13 +179,15 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         elif step == "search":
             parsed = session["parsed"]
 
-            session["search_results"] = search_listings(
-                description=parsed["description"],
-                size=parsed["size"],
-                max_price=parsed["max_price"],
+            session["search_results"] = call_tool(
+                "search_listings",
+                {
+                    "description": parsed["description"],
+                    "size": parsed["size"],
+                    "max_price": parsed["max_price"],
+                },
             )
 
-            # This is the important branch
             if not session["search_results"]:
                 session["error"] = (
                     "I couldn't find any matching listings. "
