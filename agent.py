@@ -173,6 +173,11 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         # Step 1: Parse the user's query
         if step == "parse":
             session["parsed"] = _parse_query(session["query"])
+            trace.step(
+                "parse_query",
+                inputs=session["query"],
+                returned=str(session["parsed"]),
+            )
             step = "search"
 
         # Step 2: Search the listings
@@ -188,6 +193,25 @@ def run_agent(query: str, wardrobe: dict) -> dict:
                 },
             )
 
+            if session["search_results"]:
+                search_note = (
+                    "Matches found: select the first result. Returned IDs and prices: "
+                    + str([
+                        (item["id"], item["price"])
+                        for item in session["search_results"]
+                    ])
+                )
+            else:
+                search_note = (
+                    "No matches: stop before suggest_outfit and create_fit_card."
+                )
+            trace.step(
+                "search_listings (via MCP)",
+                inputs=str(parsed),
+                returned=session["search_results"],
+                note=search_note,
+            )
+
             if not session["search_results"]:
                 session["error"] = (
                     "I couldn't find any matching listings. "
@@ -200,21 +224,79 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         # Step 3: Choose the first result
         elif step == "select":
             session["selected_item"] = session["search_results"][0]
+            trace.step(
+                "select_item",
+                inputs="First search result",
+                returned=session["selected_item"],
+                note=f"session['selected_item'] ID: {session['selected_item']['id']}",
+            )
             step = "outfit"
 
         # Step 4: Generate an outfit
         elif step == "outfit":
-            session["outfit_suggestion"] = suggest_outfit(
-                session["selected_item"],
-                session["wardrobe"],
+            outfit_inputs = (
+                f"new_item ID: {session['selected_item']['id']}; "
+                f"wardrobe items: {len(session['wardrobe'].get('items', []))}"
+            )
+            try:
+                session["outfit_suggestion"] = suggest_outfit(
+                    session["selected_item"],
+                    session["wardrobe"],
+                )
+            except ModelUnavailable:
+                session["error"] = (
+                    "I couldn't reach the model to suggest an outfit. "
+                    "Check GEMINI_API_KEY in .env and your internet connection, "
+                    "then try again."
+                )
+                trace.step(
+                    "suggest_outfit",
+                    inputs=outfit_inputs,
+                    returned=session["error"],
+                    note="Model unavailable: stop.",
+                )
+                return session
+            trace.step(
+                "suggest_outfit",
+                inputs=outfit_inputs,
+                returned=session["outfit_suggestion"],
+                note=(
+                    "Empty wardrobe: returned general styling advice."
+                    if not session["wardrobe"].get("items", []) else
+                    "Used the selected item and saved wardrobe."
+                ),
             )
             step = "fit_card"
 
         # Step 5: Generate the fit card
         elif step == "fit_card":
-            session["fit_card"] = create_fit_card(
-                session["outfit_suggestion"],
-                session["selected_item"],
+            card_inputs = (
+                f"new_item ID: {session['selected_item']['id']}; "
+                f"outfit: {session['outfit_suggestion']}"
+            )
+            try:
+                session["fit_card"] = create_fit_card(
+                    session["outfit_suggestion"],
+                    session["selected_item"],
+                )
+            except ModelUnavailable:
+                session["error"] = (
+                    "I couldn't reach the model to create a fit card. "
+                    "Check GEMINI_API_KEY in .env and your internet connection, "
+                    "then try again."
+                )
+                trace.step(
+                    "create_fit_card",
+                    inputs=card_inputs,
+                    returned=session["error"],
+                    note="Model unavailable: stop.",
+                )
+                return session
+            trace.step(
+                "create_fit_card",
+                inputs=card_inputs,
+                returned=session["fit_card"],
+                note="All three tools completed.",
             )
             step = "done"
 

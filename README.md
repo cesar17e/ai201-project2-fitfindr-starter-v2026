@@ -285,14 +285,105 @@ that produced it:
 
 **Happy path**
 
-```
+```text
+$ python app.py ask 'vintage graphic tee under $30' --trace
 
+[1] parse_query
+      in:  vintage graphic tee under $30
+      out: {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      →    Matches found: select the first result. Returned IDs and prices: [('lst_002', 18.0), ('lst_006', 24.0), ('lst_033', 19.0), ('lst_015', 26.0), ('lst_017', 15.0), ('lst_003', 22.0), ('lst_011', 27.0), ('lst_012', 20.0), ('lst_013', 30.0), ('lst_014', 12.0)]
+[3] select_item
+      in:  First search result
+      out: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+      →    session['selected_item'] ID: lst_002
+[4] suggest_outfit
+      in:  new_item ID: lst_002; wardrobe items: 10
+      out: Here are two outfit ideas using your new Y2K butterfly baby tee and pieces from your wardrobe:  **Outfit 1: Ca…
+      →    Used the selected item and saved wardrobe.
+[5] create_fit_card
+      in:  new_item ID: lst_002; outfit: Here are two outfit ideas using your new Y2K butterfly baby tee and pieces from …
+      out: The Y2K Baby Tee — Butterfly Print listed on depop for $18.0 channels a nostalgic 2000s streetwear vibe. It pa…
+      →    All three tools completed.
 ```
 
 **Empty search**
 
+```text
+$ python app.py ask 'designer ballgown size XXS under $5'
+
+[1] parse_query
+      in:  designer ballgown size XXS under $5
+      out: {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+      out: [] (empty)
+      →    No matches: stop before suggest_outfit and create_fit_card.
+
+I couldn't find any matching listings. Try changing the description, size, or maximum price.
 ```
 
+**Empty wardrobe**
+
+```text
+$ python app.py ask 'vintage graphic tee under $30' --empty-wardrobe
+
+(running with an empty wardrobe)
+[1] parse_query
+      in:  vintage graphic tee under $30
+      out: {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      →    Matches found: select the first result. Returned IDs and prices: [('lst_002', 18.0), ('lst_006', 24.0), ('lst_033', 19.0), ('lst_015', 26.0), ('lst_017', 15.0), ('lst_003', 22.0), ('lst_011', 27.0), ('lst_012', 20.0), ('lst_013', 30.0), ('lst_014', 12.0)]
+[3] select_item
+      in:  First search result
+      out: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+      →    session['selected_item'] ID: lst_002
+[4] suggest_outfit
+      in:  new_item ID: lst_002; wardrobe items: 0
+      out: Here are two simple ways to style your Y2K baby tee:  *   **Casual Y2K Streetwear:** Pair the tee with mid-ris…
+      →    Empty wardrobe: returned general styling advice.
+[5] create_fit_card
+      in:  new_item ID: lst_002; outfit: Here are two simple ways to style your Y2K baby tee:  *   **Casual Y2K Streetwea…
+      out: Channeling total Y2K nostalgia with this Y2K Baby Tee — Butterfly Print, listed on depop for $18.0. The look l…
+      →    All three tools completed.
+
+  Found:    Y2K Baby Tee — Butterfly Print — $18.0 on depop
+
+  Outfit:   Here are two simple ways to style your Y2K baby tee:
+
+*   **Casual Y2K Streetwear:** Pair the tee with mid-rise or low-rise blue denim jeans and white chunky sneakers. Add a small shoulder bag and simple silver hoop earrings to complete the look.
+*   **Sweet Cottagecore Mix:** Tuck the tee into a pink or lavender tiered midi skirt and wear it with canvas sneakers or strappy flat sandals. Layer a delicate beaded necklace for a soft, feminine touch.
+
+  Fit card: Channeling total Y2K nostalgia with this Y2K Baby Tee — Butterfly Print, listed on depop for $18.0. The look leans into a playful mix of streetwear edge and sweet cottagecore charm depending on the styling. It pairs effortlessly with low-rise denim or a tiered midi skirt for an easy, nostalgic aesthetic.
+```
+
+**Model unavailable**
+
+```text
+$ python app.py ask 'black mesh top test123 under $20' --trace
+[1] parse_query
+      in:  black mesh top test123 under $20
+      out: {'description': 'black mesh top test123', 'size': None, 'max_price': 20.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'black mesh top test123', 'size': None, 'max_price': 20.0}
+      out: 3 items: Mesh Long-Sleeve Top — Black, Biker Shorts — Black, Shiny, Low-Top Canvas Sneakers — Off-White
+      →    Matches found: select the first result. Returned IDs and prices: [('lst_017', 15.0), ('lst_026', 14.0), ('lst_035', 20.0)]
+[3] select_item
+      in:  First search result
+      out: Mesh Long-Sleeve Top — Black ($15.0, depop)
+      →    session['selected_item'] ID: lst_017
+[4] suggest_outfit
+      in:  new_item ID: lst_017; wardrobe items: 10
+      out: I couldn't reach the model to suggest an outfit. Check GEMINI_API_KEY in .env and your internet connection, th…
+      →    Model unavailable: stop.
+
+I couldn't reach the model to suggest an outfit. Check GEMINI_API_KEY in .env and your internet connection, then try again.
+
+1 model calls this session
 ```
 
 **On the MCP move:** <!-- what changed in your code, and whether anything
@@ -300,7 +391,7 @@ behaved differently afterwards. If the rewire didn't work, say exactly where it
 broke — the error text and the last thing that worked. That earns the point in
 full. -->
 
-
+`search_listings` used to be called directly from `agent.py`. It is now called through `mcp_client.py`, which connects to the registered tool in `mcp_server.py`. The return value stayed a list of listing dictionaries, or `[]` when nothing matched. The rest of the planning loop and the empty-search branch behaved the same: matching results continued to outfit and fit-card generation, while an empty search stopped before both tools.
 
 ---
 
