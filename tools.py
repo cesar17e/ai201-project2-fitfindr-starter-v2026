@@ -328,6 +328,16 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
     8. Do not claim the user bought, found, wore, or personally experienced the item. Describe the outfit and listing using only the provided information.
     9. Avoid first-person claims or opinions such as "I love", "I wore", "I bought", or "I found". Keep the caption natural but factual.
 
+    The item is only a listing the user is considering; no purchase, ownership,
+    or personal experience has been confirmed. Avoid implied claims even when
+    there is no "I" or "my": "Scored this", "Snagged this", "Picked this up",
+    "Just bought", and "My new find" all invent an acquisition.
+    For example, replace "Scored this {title} for ${price} on {platform}"
+    with "The {title} is listed on {platform} for ${price}."
+    Before returning the caption, check each sentence and rewrite any unsupported
+    purchase, ownership, or personal-experience claim as a factual listing or
+    styling description. Keep the final caption within the rules above.
+
     Return only the finished caption.
     """
 

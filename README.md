@@ -380,7 +380,7 @@ Scored this Mesh Long-Sleeve Top — Black for just $15.0 on depop, and it is th
 
 The model implied a purchase despite the prompt forbidding that claim, and the tool returned it without validation. The loop and session passed the correct item. This try still passes criterion 4: it includes the price and platform and has two sentences, while unsupported ownership claims are outside that criterion.
 
-I would strengthen criterion 4 in future to also reject unsupported purchase or personal-experience claims. For Milestone 5, I would tighten the fit-card prompt with wording to avoid, such as "Scored this," and measure whether those claims decrease. The original criterion and prompt remain unchanged.
+I would strengthen criterion 4 in future to also reject unsupported purchase or personal-experience claims. This diagnosis supports the Milestone 5 prompt change below. The original criterion remains unchanged, and the before report preserves the original prompt's results.
 
 ---
 
@@ -517,24 +517,45 @@ full. -->
 
 **What I changed:**
 
+I tightened only the `create_fit_card` prompt in `tools.py`. It now explains that the item is a listing under consideration, explicitly rejects implied acquisition phrases such as "Scored this" and "Snagged this," gives a factual alternative using the item's title, price, and platform, and asks the model to check for unsupported claims before returning the caption. The agent, scenarios, original criteria, model, and temperature are unchanged.
+
 **Which failure it was meant to fix:**
+
+Criterion 4, Try 2 in the before report began "Scored this Mesh Long-Sleeve Top — Black," implying an acquisition that the inputs never confirmed. That caption passed the original price/platform/length criterion, so this improvement addresses an observed quality problem rather than a missed target. I scored the same five criteria again and separately compared unsupported acquisition or personal-experience claims in criterion 4's five captions.
 
 ### Run Log — After
 
 | Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
 |---|---|---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |  |  |
+| 1. Matching query completes all three tools and returns a fit card | 4 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 2. Impossible query stops before suggest_outfit with a helpful message | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 3. Selected-item ID matches the item passed to suggest_outfit | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 4. Fit card includes price and platform and has 2–4 sentences | 4 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 5. Every search result respects the maximum price | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+
+After report: [run_2026-10-12_0217_after.md](results/run_2026-10-12_0217_after.md), produced by `run_eval.py::main` / `write_report`. Each scenario ran five times with caching off, using the same queries, wardrobes, model, temperature, and original targets. The full rerun made 50 real model calls. The empty-wardrobe diagnostic also completed successfully in all five tries.
+
+Criterion 4's after-caption sentence counts were 2, 2, 3, 2, and 3; each included $15.0 and depop.
+
+**Real after output — criterion 4, Try 2**
+
+Query: `black mesh top under $20`. Caption returned by `tools.py::create_fit_card`, called from `agent.py::run_agent`:
+
+```text
+The Mesh Long-Sleeve Top — Black is listed on depop for $15.0. Layering this piece creates a 90s grunge-streetwear vibe when paired with baggy jeans and combat boots, or a monochrome casual-cool look with wide-leg trousers and a zip hoodie.
+```
 
 **Did it help, and how do I know:**
 
 <!-- If it made things worse, say that. Honestly reported, that earns full
      credit and is more interesting than one that worked. -->
 
+| Measure | Before | After |
+|---|---|---|
+| Each of the five original criteria | MET (5/5) | MET (5/5) |
+| Criterion 4 captions with unsupported acquisition or personal-experience claims (additional diagnostic) | 1 of 5 | 0 of 5 |
 
+The change helped with the diagnosed wording problem in this sample: the before caption implied a purchase with "Scored this," while all five after captions described the listing and styling without unsupported personal claims. Original criterion scores stayed at 5/5, so the measured improvement is in caption quality rather than the acceptance-test pass rate. Five captions are a small sample, and model output varies; this result does not guarantee the problem cannot recur.
 
 ---
 
