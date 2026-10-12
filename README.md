@@ -222,19 +222,120 @@ Nothing beats the timeless vibe of these Vintage Levi's 501 Jeans in a medium wa
      `python run_eval.py --label before` runs everything and writes the table
      into results/. Paste it here and fill in the verdicts. -->
 
+Results from `python run_eval.py --label before`, recorded in [run_2026-10-12_0102_before.md](results/run_2026-10-12_0102_before.md). Each scenario ran five times with caching off and temperature 0.9.
+
 | Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
 |---|---|---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |  |  |
+| 1. Matching query completes all three tools and returns a fit card | 4 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 2. Impossible query stops before suggest_outfit with a helpful message | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 3. Selected-item ID matches the item passed to suggest_outfit | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 4. Fit card includes price and platform and has 2–4 sentences | 4 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 5. Every search result respects the maximum price | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
 
-**Real output from one try**, pasted as text, naming the file and function
-that produced it:
+For criterion 4, sentence counts were 3, 2, 3, 2, and 3; all five captions included the selected item’s $15.0 price and depop platform. The empty-wardrobe scenario remains a separate diagnostic and is not one of these five criteria.
 
+**Real output from one try per criterion**
+
+The following excerpts are copied from Try 1 of each numbered scenario in the report. The report was produced by `run_eval.py::main` / `write_report`; trace lines were produced by `agent.py::run_agent` using `trace.py::step`.
+
+**Criterion 1 — Try 1**
+
+Query: `vintage graphic tee under $30`
+
+Produced by `agent.py::run_agent`; caption returned by `tools.py::create_fit_card`.
+
+```text
+[1] parse_query
+      in:  vintage graphic tee under $30
+      out: {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      →    Matches found: select the first result. Returned IDs and prices: [('lst_002', 18.0), ('lst_006', 24.0), ('lst_033', 19.0), ('lst_015', 26.0), ('lst_017', 15.0), ('lst_003', 22.0), ('lst_011', 27.0), ('lst_012', 20.0), ('lst_013', 30.0), ('lst_014', 12.0)]
+[3] select_item
+      in:  First search result
+      out: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+      →    session['selected_item'] ID: lst_002
+[4] suggest_outfit
+      in:  new_item ID: lst_002; wardrobe items: 10
+      out: Here are two outfit ideas combining your new Y2K butterfly baby tee with pieces you already own:  **Outfit 1: …
+      →    Used the selected item and saved wardrobe.
+[5] create_fit_card
+      in:  new_item ID: lst_002; outfit: Here are two outfit ideas combining your new Y2K butterfly baby tee with pieces …
+      out: The Y2K Baby Tee — Butterfly Print listed on depop for $18.0 brings together sweet vintage graphics and effort…
+      →    All three tools completed.
 ```
 
+Fit card:
+
+```text
+The Y2K Baby Tee — Butterfly Print listed on depop for $18.0 brings together sweet vintage graphics and effortless cottagecore charm. Pairing the fitted graphic top with baggy dark wash denim or wide-leg khaki trousers creates a balanced look that leans into classic early-2000s streetwear and minimal earth tones. Complete with chunky white sneakers and a brown leather belt, the finished outfit effortlessly merges nostalgic style with everyday casual wear.
+```
+
+**Criterion 2 — Try 1**
+
+Query: `designer ballgown size XXS under $5`
+
+Produced by `agent.py::run_agent`; stopped-session fields printed by `run_eval.py::write_report`.
+
+```text
+- stopped early: yes — I couldn't find any matching listings. Try changing the description, size, or maximum price.
+- selected_item: (none)
+- search_results: 0
+
+[1] parse_query
+      in:  designer ballgown size XXS under $5
+      out: {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+      out: [] (empty)
+      →    No matches: stop before suggest_outfit and create_fit_card.
+```
+
+**Criterion 3 — Try 1**
+
+Query: `vintage graphic tee under $30, size M`
+
+Produced by `agent.py::run_agent`, showing the session-selected ID and the input to `tools.py::suggest_outfit`.
+
+```text
+[3] select_item
+      in:  First search result
+      out: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+      →    session['selected_item'] ID: lst_002
+[4] suggest_outfit
+      in:  new_item ID: lst_002; wardrobe items: 10
+      out: Here are two ways to style your new Y2K baby tee using pieces from your wardrobe:  **Outfit 1: 2000s Streetwea…
+      →    Used the selected item and saved wardrobe.
+```
+
+**Criterion 4 — Try 1**
+
+Query: `black mesh top under $20`
+
+Produced by `tools.py::create_fit_card`, called from `agent.py::run_agent`; selected-item details printed by `run_eval.py::write_report`.
+
+```text
+- selected_item: Mesh Long-Sleeve Top — Black ($15.0, depop)
+
+Fit card:
+A classic Mesh Long-Sleeve Top in black listed on depop for $15.0 brings instant 90s grunge and Y2K energy to any wardrobe. Layering the sheer black fabric over a white ribbed tank and pairing it with baggy dark denim creates an effortless contrast. Finished with chunky combat boots, the look leans entirely into a dark, textured streetwear aesthetic.
+```
+
+**Criterion 5 — Try 1**
+
+Query: `black mesh top under $20`
+
+Produced by `agent.py::run_agent`; search results returned by `mcp_server.py::search_listings`, which calls `tools.py::search_listings`.
+
+```text
+[1] parse_query
+      in:  black mesh top under $20
+      out: {'description': 'black mesh top', 'size': None, 'max_price': 20.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'black mesh top', 'size': None, 'max_price': 20.0}
+      out: 3 items: Mesh Long-Sleeve Top — Black, Biker Shorts — Black, Shiny, Low-Top Canvas Sneakers — Off-White
+      →    Matches found: select the first result. Returned IDs and prices: [('lst_017', 15.0), ('lst_026', 14.0), ('lst_035', 20.0)]
 ```
 
 ---
